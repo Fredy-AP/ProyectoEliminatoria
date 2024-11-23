@@ -3,185 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Shader Effect</title>
+    <title>Agricultura</title>
+    <!-- Enlace a Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
+        /* Aplicando un fondo de pantalla completo */
+        body {
+            background-image: url('https://www.ejemplo.com/tu-imagen.jpg'); /* Cambia esto por la URL de tu imagen */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            height: 100vh;
+            color: white;
         }
-        canvas {
-            display: block;
+
+        /* Diseño de la cabecera */
+        .header {
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+        }
+
+        .content {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .footer {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            text-align: center;
             position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none; /* Para que el canvas no interfiera con los clics */
+            width: 100%;
+            bottom: 0;
         }
     </style>
 </head>
 <body>
 
-<canvas id="neuro"></canvas>
+    <!-- Cabecera -->
+    <div class="header">
+        <h1>Bienvenidos a Agricultura</h1>
+        <p>Descubre el mundo de la agricultura y la naturaleza</p>
+    </div>
 
-<!-- Shaders -->
-<script id="vertShader" type="x-shader/x-vertex">
-    attribute vec2 a_position;
-    void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-    }
-</script>
+    <!-- Contenido principal -->
+    <div class="content">
+        <h2>¿Qué es la Agricultura?</h2>
+        <p>La agricultura es la ciencia, la práctica y la industria de cultivar la tierra, criar animales para alimentos, fibras, medicinales u otros productos útiles.</p>
+        <button class="btn btn-success">Leer más</button>
+    </div>
 
-<script id="fragShader" type="x-shader/x-fragment">
-    precision mediump float;
-    uniform float u_time;
-    uniform vec2 u_pointer_position;
-    uniform float u_scroll_progress;
-    uniform float u_ratio;
-    
-    void main() {
-        vec2 p = gl_FragCoord.xy / vec2(800.0, 600.0);
-        vec3 color = vec3(0.0);
-        
-        color.r = abs(sin(u_time * 0.1 + p.x + u_pointer_position.x));
-        color.g = abs(sin(u_time * 0.1 + p.y + u_pointer_position.y));
-        color.b = abs(sin(u_time * 0.1 + p.x + p.y));
-        
-        gl_FragColor = vec4(color, 1.0);
-    }
-</script>
+    <!-- Pie de página -->
+    <div class="footer">
+        <p>&copy; 2024 Agricultura. Todos los derechos reservados.</p>
+    </div>
 
-<script>
-    const canvasEl = document.getElementById("neuro");
-    const devicePixelRatio = Math.min(window.devicePixelRatio, 2);
-
-    const pointer = {
-        x: 0,
-        y: 0,
-        tX: 0,
-        tY: 0,
-    };
-
-    let gl;
-    let uniforms;
-
-    setupEvents();
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
-    render();
-
-    function initShader() {
-        const vsSource = document.getElementById("vertShader").innerHTML;
-        const fsSource = document.getElementById("fragShader").innerHTML;
-
-        gl = canvasEl.getContext("webgl") || canvasEl.getContext("experimental-webgl");
-
-        if (!gl) {
-            alert("WebGL is not supported by your browser.");
-        }
-
-        function createShader(gl, sourceCode, type) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, sourceCode);
-            gl.compileShader(shader);
-
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
-                gl.deleteShader(shader);
-                return null;
-            }
-
-            return shader;
-        }
-
-        const vertexShader = createShader(gl, vsSource, gl.VERTEX_SHADER);
-        const fragmentShader = createShader(gl, fsSource, gl.FRAGMENT_SHADER);
-
-        function createShaderProgram(gl, vertexShader, fragmentShader) {
-            const program = gl.createProgram();
-            gl.attachShader(program, vertexShader);
-            gl.attachShader(program, fragmentShader);
-            gl.linkProgram(program);
-
-            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                console.error("Unable to initialize the shader program: " + gl.getProgramInfoLog(program));
-                return null;
-            }
-
-            return program;
-        }
-
-        const shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader);
-        uniforms = getUniforms(shaderProgram);
-
-        function getUniforms(program) {
-            let uniforms = [];
-            let uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-            for (let i = 0; i < uniformCount; i++) {
-                let uniformName = gl.getActiveUniform(program, i).name;
-                uniforms[uniformName] = gl.getUniformLocation(program, uniformName);
-            }
-            return uniforms;
-        }
-
-        const vertices = new Float32Array([-1., -1., 1., -1., -1., 1., 1., 1.]);
-
-        const vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-        gl.useProgram(shaderProgram);
-
-        const positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
-        gl.enableVertexAttribArray(positionLocation);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    function render() {
-        const currentTime = performance.now();
-
-        pointer.x += (pointer.tX - pointer.x) * 0.5;
-        pointer.y += (pointer.tY - pointer.y) * 0.5;
-
-        gl.uniform1f(uniforms.u_time, currentTime);
-        gl.uniform2f(uniforms.u_pointer_position, pointer.x / window.innerWidth, 1 - pointer.y / window.innerHeight);
-        gl.uniform1f(uniforms.u_scroll_progress, window["pageYOffset"] / (2 * window.innerHeight));
-
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        requestAnimationFrame(render);
-    }
-
-    function resizeCanvas() {
-        canvasEl.width = window.innerWidth * devicePixelRatio;
-        canvasEl.height = window.innerHeight * devicePixelRatio;
-        gl.uniform1f(uniforms.u_ratio, canvasEl.width / canvasEl.height);
-        gl.viewport(0, 0, canvasEl.width, canvasEl.height);
-    }
-
-    function setupEvents() {
-        window.addEventListener("pointermove", e => {
-            updateMousePosition(e.clientX, e.clientY);
-        });
-        window.addEventListener("touchmove", e => {
-            updateMousePosition(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
-        });
-        window.addEventListener("click", e => {
-            updateMousePosition(e.clientX, e.clientY);
-        });
-
-        function updateMousePosition(eX, eY) {
-            pointer.tX = eX;
-            pointer.tY = eY;
-        }
-    }
-
-    initShader();
-</script>
-
+    <!-- Enlace a Bootstrap JS y dependencias de Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
 </body>
 </html>
-
 
